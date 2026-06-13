@@ -52,9 +52,10 @@ class MainWindow(QMainWindow):
         self.device_discovery_worker.log.connect(self.show_status)
         self.device_discovery_worker.start()
         self.device_dialogs = []  # Track open device selection dialogs
-        self.firewall_worker = FirewallCheckWorker()
-        self.firewall_worker.result.connect(self.handle_firewall_check_result)
-        self.firewall_worker.start()
+        if sys.platform == 'win32':
+            self.firewall_worker = FirewallCheckWorker()
+            self.firewall_worker.result.connect(self.handle_firewall_check_result)
+            self.firewall_worker.start()
         self.setup_midi_io_ui()
         # Ensure MIDI In-to-Out forwarding is set up immediately
         # self.start_receiving() # This is now implicitly handled by midi_handler.set_input_port
@@ -132,7 +133,11 @@ class MainWindow(QMainWindow):
         # Set the MIDI handler's ports first. This will start listeners.
         if last_out:
             self.show_status(f"[UI] Restoring last MIDI Out: '{last_out}'")
-            self.midi_handler.open_output(last_out)
+            try:
+                self.midi_handler.open_output(last_out)
+            except Exception as e:
+                self.show_status(f"[ERROR] Could not open MIDI Out '{last_out}': {e}")
+                self.midi_handler.open_output(None)
         else: # Ensure a default or no port state is explicitly set if nothing was saved
             self.midi_handler.open_output(None)
 
