@@ -133,10 +133,8 @@ jobs:
         path: |
           dist_nuitka/*
         retention-days: 1
-
-
-        
-release:
+  
+  release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
