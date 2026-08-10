@@ -14,19 +14,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
-            build_type: 'linux'
-          - os: macos-13
+          - os: macos-latest
             build_type: 'macos'
-          - os: windows-2022
-            build_type: 'windows'
-          - os: ubuntu-22.04-arm
-            build_type: 'linux-arm64'
-          - os: ubuntu-22.04
-            build_type: 'alpine-musl'
-          - os: ubuntu-22.04-arm
-            build_type: 'alpine-musl-arm64'
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
