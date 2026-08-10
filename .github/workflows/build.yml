@@ -134,17 +134,23 @@ jobs:
           dist_nuitka/*
         retention-days: 1
 
-  release:
+
+        
+release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    # REQUIRED: Grants the token permissions to create/update releases
+    permissions:
+      contents: write
+
     steps:
     - name: Download Executable
       uses: actions/download-artifact@v4
       with:
         path: ./executables/
-        # merge-multiple: true
 
     - name: Display structure of downloaded files
       run: ls -la executables/
@@ -152,10 +158,8 @@ jobs:
     - name: Prepare release files
       run: |
         mkdir -p release
-        # Debug: Show the actual structure
         find executables -type f -name "*MiniDexed*" -o -name "*.exe" -o -name "*.bin"
         
-        # Rename and organize files for release
         find executables -name "*MiniDexed Service Utility.exe" -exec cp {} release/MiniDexed-Service-Utility-windows \;
         find executables -name "*MiniDexed Service Utility.bin" -path "*linux-X64*" -exec cp {} release/MiniDexed-Service-Utility-linux \;
         find executables -name "*MiniDexed Service Utility.bin" -path "*linux-arm64*" -exec cp {} release/MiniDexed-Service-Utility-linux-arm64 \;
@@ -163,10 +167,7 @@ jobs:
         find executables -name "*MiniDexed Service Utility.bin" -path "*alpine-musl-X64*" -exec cp {} release/MiniDexed-Service-Utility-linux-musl \;
         find executables -name "*MiniDexed Service Utility.bin" -path "*alpine-musl-arm64*" -exec cp {} release/MiniDexed-Service-Utility-linux-musl-arm64 \;
         
-        # Make Linux/macOS binaries executable (only if they exist)
         find release -name "*linux*" -o -name "*macos*" | xargs -r chmod +x
-        
-        # List final release files
         ls -la release/ || echo "No files found in release directory"
 
     - name: Zip Artifacts
@@ -179,14 +180,16 @@ jobs:
         done
         ls -lh *.zip
 
-    - name: Upload binaries to release using uploadtool
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOADTOOL_BODY: "Automated build from commit ${{ github.sha }}\\nBuilt on ${{ github.event.head_commit.timestamp }}\\nBranch: ${{ github.ref_name }}"
-      run: |
-        set -e
-        cd release
-        ls -lh *.zip # Show what we're about to upload
-        wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-
-        bash upload.sh *.zip
+    # REPLACED: upload.sh script replaced by a reliable GitHub Action
+    - name: Upload binaries to continuous release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: continuous
+        name: Continuous Build
+        body: |
+          Automated build from commit ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+        draft: false
+        prerelease: true
+        files: release/*.zip
+        fail_on_unmatched_files: true
