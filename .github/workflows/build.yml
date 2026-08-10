@@ -11,6 +11,11 @@ jobs:
   build:
     name: Build Executables
     runs-on: ${{ matrix.os }}
+
+        # Add this permissions block
+    permissions:
+      contents: write  # This allows the token to create releases
+      
     strategy:
       matrix:
         include:
